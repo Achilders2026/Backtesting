@@ -1,1 +1,16 @@
+from google.colab import drive
+drive.mount('/content/drive')
 
+import glob
+import pandas as pd
+
+ROOT = '/content/drive/MyDrive/backtesting'
+
+def load(ticker, interval):
+    files = sorted(glob.glob(f'{ROOT}/*/{interval}/{ticker}_{interval}_*.csv'))
+    df = pd.concat(pd.read_csv(f, index_col='Datetime') for f in files)
+    df.index = pd.to_datetime(df.index, utc=True).tz_convert('America/New_York')
+    return df[~df.index.duplicated(keep='last')].sort_index()
+
+arm = load('ARM', '2m')
+qqq = load('QQQ', '2m')
