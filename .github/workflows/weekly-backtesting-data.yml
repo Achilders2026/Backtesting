@@ -1,0 +1,47 @@
+name: Weekly backtesting data pull
+
+on:
+  schedule:
+    - cron: '0 10 * * 6'   # every Saturday 10:00 UTC (6 AM ET summer / 5 AM ET winter)
+  workflow_dispatch: {}    # adds a "Run workflow" button so you can run it any time
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      # Google Drive connection (rclone). The "backtesting" folder's ID makes it the top level.
+      RCLONE_CONFIG_GDRIVE_TYPE: drive
+      RCLONE_CONFIG_GDRIVE_SCOPE: drive
+      RCLONE_CONFIG_GDRIVE_ROOT_FOLDER_ID: 1fgnnIEGTCU9Za06TVp_H2cVnQErZA3r6
+      RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+      PREV_DIR: prev
+      OUT_DIR: out
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python packages
+        run: pip install -U yfinance pandas
+
+      - name: Install rclone (Google Drive copier)
+        run: curl -fsSL https://rclone.org/install.sh | sudo bash
+
+      - name: Download earlier manifests from Drive
+        run: |
+          mkdir -p prev
+          rclone copy gdrive: prev --include "/*/manifest_*.csv" -v
+          rclone lsf gdrive: --dirs-only > prev/_dirs.txt
+
+      - name: Pull new bars from Yahoo
+        run: python backtesting/weekly_pull.py
+
+      - name: Upload this week's files to Drive
+        if: always()
+        run: |
+          if [ -d out ]; then rclone copy out gdrive: --transfers 8 -v; fi
