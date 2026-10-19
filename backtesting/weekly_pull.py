@@ -27,7 +27,7 @@ BENCHMARKS = ['QQQ']
 MAX_DAYS = {'1m': 29, '2m': 59, '5m': 59}
 CHUNK_DAYS = {'1m': 5, '2m': 59, '5m': 59}          # 1m pulled 5 days at a time
 BAR = {'1m': dt.timedelta(minutes=1), '2m': dt.timedelta(minutes=2), '5m': dt.timedelta(minutes=5)}
-REGULAR_HOURS_ONLY = True
+REGULAR_HOURS_ONLY = False
 PAUSE = 1.0                                         # seconds between Yahoo requests
 FAIL_IF_ERRORS_OVER = 0.10                          # mark the run failed (GitHub emails you) if >10% error
 
